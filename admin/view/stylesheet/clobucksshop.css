@@ -1,0 +1,19 @@
+#clobucksShop .auth {
+    width:200px;
+}
+
+div#formNotifies {
+    text-align: center;
+}
+
+td.suppliers {
+    display: inline-table;
+} 
+
+td.test-auth {
+    display: inline-table;    
+}
+
+.list tbody td {
+    vertical-align: top;
+}
