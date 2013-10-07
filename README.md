@@ -2,19 +2,19 @@ ocstore-plugin
 ==============
 
 
-В файл /catalog/controller/checkout/confirm.php необходимо, после строки:
+Р’ С„Р°Р№Р» /catalog/controller/checkout/confirm.php РЅРµРѕР±С…РѕРґРёРјРѕ, РїРѕСЃР»Рµ СЃС‚СЂРѕРєРё:
 $this->session->data['order_id'] = $this->model_checkout_order->addOrder($data);
 
-Добавить две строки:
+Р”РѕР±Р°РІРёС‚СЊ РґРІРµ СЃС‚СЂРѕРєРё:
 $this->load->model('clobucks/Order');
 $this->model_clobucks_Order->apiSetOrder($this->customer,$this->cart->getProducts(),$this->session->data['order_id']);
 
-В файл admin/view/template/sale/order_list.tpl, добавить строку:
-      		<a onclick="$('#form').attr('action', '<?php echo $sync; ?>'); $('#form').attr('target', '_self'); $('#form').submit();" class="button">Синхронизировать заказы</a> 
-Добавить после <div class="buttons"> (приблизительно 18 строка)
+Р’ С„Р°Р№Р» admin/view/template/sale/order_list.tpl, РґРѕР±Р°РІРёС‚СЊ СЃС‚СЂРѕРєСѓ:
+      		<a onclick="$('#form').attr('action', '<?php echo $sync; ?>'); $('#form').attr('target', '_self'); $('#form').submit();" class="button">РЎРёРЅС…СЂРѕРЅРёР·РёСЂРѕРІР°С‚СЊ Р·Р°РєР°Р·С‹</a> 
+Р”РѕР±Р°РІРёС‚СЊ РїРѕСЃР»Рµ <div class="buttons"> (РїСЂРёР±Р»РёР·РёС‚РµР»СЊРЅРѕ 18 СЃС‚СЂРѕРєР°)
 
 
-Необходимо перезаписать файл admin/controller/sale/order.php , либо, если файд изменен, добавить функцию, после функции update:
+РќРµРѕР±С…РѕРґРёРјРѕ РїРµСЂРµР·Р°РїРёСЃР°С‚СЊ С„Р°Р№Р» admin/controller/sale/order.php , Р»РёР±Рѕ, РµСЃР»Рё С„Р°Р№Рґ РёР·РјРµРЅРµРЅ, РґРѕР±Р°РІРёС‚СЊ С„СѓРЅРєС†РёСЋ, РїРѕСЃР»Рµ С„СѓРЅРєС†РёРё update:
 	public function sync() {
 		$this->language->load('sale/order');
 		$this->document->setTitle($this->language->get('heading_title'));
