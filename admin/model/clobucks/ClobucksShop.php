@@ -1,6 +1,6 @@
 <?php
 
-require DIR_SYSTEM . 'IXR_Library.php';
+require DIR_SYSTEM . 'library/IXR_Library.php';
 
 class ModelClobucksClobucksShop extends Model
 {
