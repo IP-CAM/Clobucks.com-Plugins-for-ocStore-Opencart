@@ -1,5 +1,262 @@
 <?= $header; ?>
-<link rel="stylesheet" type="text/css" href="view/stylesheet/clobucksshop.css" />
+<link rel="stylesheet" type="text/css" href="/admin/view/stylesheet/clobucksshop.css" />
+<link rel="stylesheet" type="text/css" href="/admin/view/javascript/jquery-tree/jquery.tree.min.css" />
+<script src="/admin/view/javascript/jquery-tree/jquery.tree.min.js" type="text/javascript" ></script>
+            <script language="javascript" type="text/javascript">
+                $('head').append($('<link rel="stylesheet" type="text/css" />').attr('href', 'view/javascript/jquery-tree/jquery.tree.min.css'));
+                function setNotify(msg){
+                    msg = typeof(msg) === 'undefined' ? '' : msg;
+                    var notify = $('div#formNotifies span');
+
+                    notify.text(msg);
+                }
+                function showFormNotifies(){
+                    $('div#formNotifies').show();
+                }
+                function hideFormNotifies(){
+                    $('div#formNotifies').hide();
+                }
+
+                function renderSuppliersList(suppliers){
+                    var length = suppliers.length;
+                    var suppliersSelect = $('#suppliersList');
+
+                    suppliersSelect.empty();
+
+                    for (var i = 0; i < length; i++) {
+                        if(i == 0) {
+                            suppliersSelect.append($("<option></option>").attr("value", "0").text('Выберите поставщика'));    
+                        }
+                        var supplier = suppliers[i];
+                        
+                        
+                        if(supplier.id == "505998ea5caf25a003000000") {
+                            suppliersSelect.append($("<option></option>").attr("selected", "selected").attr("value", supplier.id).text(supplier.description + ' (' + supplier.products_amount + ')'));    
+                        } else {
+                            suppliersSelect.append($("<option></option>").attr("value", supplier.id).text(supplier.description + ' (' + supplier.products_amount + ')'));
+                        }
+ 
+                    }
+                }
+                function renderCategoriesList(categories){
+                    var categoriesList = $('#supplierCategoriesList');
+                    var exportProductsButton = $('#exportProducts');
+                    var count = categories.length;
+                                    
+                    categoriesList.empty();
+
+                    for (var i = 0; i < count; i++) {
+                        categoriesList.append(renderCategory(categories[i], 0));
+                    }
+                    if (count === 0) {
+                        categoriesList.append('<span>У выбранного поставщика нет товаров</span>');
+                    } else {
+                        categoriesList.children().each(function() {
+                            $(this).addClass('checkboxTree');
+                        });
+                        $(".checkboxTree").tree({ });
+                        exportProductsButton.show();
+
+                        if (!categoriesList.find("ul:not(:has(ul)) :checked").length) {
+                            exportProductsButton.attr("disabled", "true");
+                        }
+                    }
+
+                    categoriesList.show();
+                }
+                function renderCategory(category){
+                    var html = '';
+                    var childrenCount = category.children.length;
+                    var checked = category.checked ? 'checked="checked"' : null 
+                    
+                    html += '<ul><li><label><input type="checkbox" ' + checked +' value="' + category.id + '">' + category.data.title;
+
+                    for (var i = 0; i < childrenCount; i++) {
+                        html += renderCategory(category.children[i]);
+                    }
+
+                    html += '</label></li></ul>';
+
+                    return html;
+                }
+
+                $('#suppliersList').mouseup(function(){
+                    var obj = $(this);
+
+                    if (obj.children().size() > 0) {
+                        $.ajax({
+                            url: "http://oc.fb.su/admin/index.php?route=module/ClobucksShop/getSupplierCategories&token=7973640029234a78c7607bb0f4be6c10",
+                            type: 'POST',
+                            data: $.param({supplier: obj.val()}),
+                            dataType: 'json',
+                            success: function(response) {
+                                var categories = response.status ? response.data : [{id: null, data: {title: 'Нет категорий'}, children: []}];
+
+                                renderCategoriesList(categories);
+                            }
+                        });
+                    }
+                });
+                
+                $("select[name=relate_delivery]").bind("click", function(e) {
+                    lastValue = $(this).val();
+                }).bind("change",function(e){
+                    if(confirm('Вы хотите изменить привязку доставки?')) {
+                        var oc_delivery_code = $(this).get(0).id;
+                        var delivery_id  = $(this).val();
+                        $.ajax({
+                            url: "http://oc.fb.su/admin/index.php?route=module/ClobucksShop/changeRelateDelivery&token=7973640029234a78c7607bb0f4be6c10",
+                            type: 'POST',
+                            data: $.param({"delivery_id": delivery_id, "oc_delivery_code": oc_delivery_code}),
+                            dataType: 'json',
+                            success: function(response) {}
+                        });
+                    } else {
+                        $(this).val(lastValue);
+                        return false
+                    }
+                });
+                
+                $("#suppliersList").bind("click", function(e) {
+                    lastValue = $(this).val();
+                }).bind("change",function(e){
+                    if(!confirm('Внимание! При смене поставщика будут потеряны все данные')) {
+                        $(this).val(lastValue);
+                        return false;
+                    }                     
+                });
+ 
+                
+                $("#supplierCategoriesList").click(function() {
+                    var categoriesList = $('#supplierCategoriesList');
+                    var exportProductsButton = $('#exportProducts');
+
+                    if (categoriesList.find("ul:not(:has(ul)) :checked").length) {
+                        exportProductsButton.removeAttr("disabled");
+                    } else {
+                        exportProductsButton.attr("disabled", "true");
+                    }
+                });
+                $('#exportProducts').click(function() {
+                    $('#exportProducts').attr("disabled", "true");
+                    $('#exportProducts_status').text('Загрузка товаров');
+                    
+                    var checkedCategories = $('#supplierCategoriesList').find("ul:not(:has(ul)) :checked");
+                    var supplier = $('#suppliersList').val();
+                    
+                    var loadProduct = function(arCategory) {
+                        $.ajax({
+                            url: "http://oc.fb.su/admin/index.php?route=module/ClobucksShop/loadProductsByCategory&token=7973640029234a78c7607bb0f4be6c10",
+                            type: 'POST',
+                            data: $.param({"category[]": arCategory, supplier: supplier}),
+                            dataType: 'json',
+                            success: function(response) {
+                                if(response.status == 0) {
+                                    $('#exportProducts').removeAttr("disabled");
+                                    $('#exportProducts_status').text('');
+                                    alert('Товары загружены');
+                                }
+                            }
+                        });
+                    };
+
+                    var arCategory = [];
+                    checkedCategories.each(function() {
+                        arCategory.push($(this).val());
+                    });
+                    
+                    loadProduct(arCategory);
+                });
+
+                // TODO All strings to $trans.
+                $(document).ready(function(){
+                    var testConnectionButton = $('button#testConnection');
+                    var getSuppliersListButton = $('button#getSuppliersList');
+                    var getSupplierProductsListButton = $('button#getsupplierProductsList');
+
+                    
+                    testConnectionButton.click(function(){
+                        var login = $('input#login').val();
+                        var password = $('input#password').val();
+                        var hash = $('input#hash').val();
+                        var form = $('form#form');
+
+                        hideFormNotifies();
+                        if (!login || !password || !hash) {
+                            setNotify('Заполните все поля');
+                            showFormNotifies();
+                        } else {
+                            $.ajax({
+                                url: "http://oc.fb.su/admin/index.php?route=module/ClobucksShop/checkAuthentication&token=7973640029234a78c7607bb0f4be6c10",
+                                type: 'POST',
+                                data: form.serialize(),
+                                dataType: 'json',
+                                success: function(response) {
+                                    if (!response) {
+                                        return;
+                                    }
+
+                                    if (response.status) {
+                                        setNotify('Успешно');
+                                        showFormNotifies();
+                                    } else {
+                                        setNotify('Ошибка введенных данных');
+                                        showFormNotifies();
+                                    }
+                                },
+                                error: function() {
+                                    setNotify('Ошибка сервера');
+                                    showFormNotifies();
+                                }
+                            });
+                        }
+                    });
+
+                    getSuppliersListButton.click(function(){
+                        $.ajax({
+                            url: "http://oc.fb.su/admin/index.php?route=module/ClobucksShop/getSuppliers&token=7973640029234a78c7607bb0f4be6c10",
+                            dataType: 'json',
+                            success: function(response) {
+                                var suppliers = response.status ? response.data : [{id: null, description: 'Поставщики отсутствуют', products_amount: ''}];
+
+                                renderSuppliersList(suppliers);
+                                getSupplierProductsListButton.show();
+                            }
+                        });
+                    });
+                    getSuppliersListButton.click();
+                    
+                    getSupplierProductsListButton.click(function() {
+                        getSupplierProductsListButton.attr('disabled','disabled');
+                        
+                        var $suppliers = $('#suppliersList');
+                        var selectedValue = $suppliers.find(':selected').val();
+
+                        if (selectedValue) {
+                            $.ajax({
+                                url: "http://oc.fb.su/admin/index.php?route=module/ClobucksShop/getSupplierCategories&token=7973640029234a78c7607bb0f4be6c10",
+                                type: 'POST',
+                                data: $.param({supplier: selectedValue}),
+                                dataType: 'json',
+                                success: function(response) {
+                                    if (!response.status) {
+                                        $('#supplierCategoriesList').append('<span>Ошибка ...</span>');
+                                    } else { 
+                                        renderCategoriesList(response.data);
+                                    }
+                                    
+                                    getSupplierProductsListButton.removeAttr('disabled');
+                                }
+                            });
+                        }
+                    });
+                });
+            </script>
+<script type="text/javascript"><!--
+        $(document).ready(function() {
+        $(".list tr:even").css("background-color", "#F4F4F8");
+});
+</script>
 <div id="content">
     <div class="breadcrumb">
         <?php foreach ($breadcrumbs as $breadcrumb) { ?>
@@ -94,26 +351,26 @@
                     </tr>
                 </thead>
                 <tbody>
-                	<?if(is_array($shipping) && count($shipping)):?>
-                		<?foreach($shipping as $value):?>
+                    <?if(is_array($shipping) && count($shipping)):?>
+                        <?foreach($shipping as $value):?>
                     <tr>
                         <td class="left related_delivery" id="relate_<?=$value['value']?>">
-							<?=$value['name']?>
+                            <?=$value['name']?>
                         </td>
                         <td class="left" valign="top">
 
-							<select name="relate_delivery" id="<?=$value['value']?>">
-                				<?if(is_array($c_shipping) && count($c_shipping)):?>
-                						<option value="0">Выберите</option>
-                					<?foreach($c_shipping as $c_value):?>
-                						<?$selected = in_array($value['value'],$c_value['selected']) ? "selected='selected'" : null;?>							
-										<option value="<?=$c_value['id']?>" <?=$selected?>><?=$c_value['title']?></option>
-				                    <?endforeach?>
-				                <?endif?> 
-				            </select>
+                            <select name="relate_delivery" id="<?=$value['value']?>">
+                                <?if(is_array($c_shipping) && count($c_shipping)):?>
+                                        <option value="0">Выберите</option>
+                                    <?foreach($c_shipping as $c_value):?>
+                                        <?$selected = in_array($value['value'],$c_value['selected']) ? "selected='selected'" : null;?>                            
+                                        <option value="<?=$c_value['id']?>" <?=$selected?>><?=$c_value['title']?></option>
+                                    <?endforeach?>
+                                <?endif?> 
+                            </select>
                         </td>
                     </tr>
-                    	<?endforeach?>
+                        <?endforeach?>
                     <?endif?>                                       
                 </tbody>
                 <tfoot>
@@ -146,9 +403,9 @@
                     suppliersSelect.empty();
 
                     for (var i = 0; i < length; i++) {
-                    	if(i == 0) {
-							suppliersSelect.append($("<option></option>").attr("value", "0").text('Выберите поставщика'));	
-                    	}
+                        if(i == 0) {
+                            suppliersSelect.append($("<option></option>").attr("value", "0").text('Выберите поставщика'));    
+                        }
                         var supplier = suppliers[i];
                         
                         
@@ -221,11 +478,11 @@
                 });
                 
                 $("select[name=relate_delivery]").bind("click", function(e) {
-    				lastValue = $(this).val();
-    			}).bind("change",function(e){
-					if(confirm('Вы хотите изменить привязку доставки?')) {
-						var oc_delivery_code = $(this).get(0).id;
-						var delivery_id  = $(this).val();
+                    lastValue = $(this).val();
+                }).bind("change",function(e){
+                    if(confirm('Вы хотите изменить привязку доставки?')) {
+                        var oc_delivery_code = $(this).get(0).id;
+                        var delivery_id  = $(this).val();
                         $.ajax({
                             url: "<?=html_entity_decode($urls['changeRelateDelivery'])?>",
                             type: 'POST',
@@ -233,20 +490,20 @@
                             dataType: 'json',
                             success: function(response) {}
                         });
-					} else {
-						$(this).val(lastValue);
-						return false
-					}
+                    } else {
+                        $(this).val(lastValue);
+                        return false
+                    }
                 });
                 
                 $("#suppliersList").bind("click", function(e) {
-    				lastValue = $(this).val();
-    			}).bind("change",function(e){
+                    lastValue = $(this).val();
+                }).bind("change",function(e){
                     if(!confirm('Внимание! При смене поставщика будут потеряны все данные')) {
-                    	$(this).val(lastValue);
+                        $(this).val(lastValue);
                         return false;
-                    }     				
-    			});
+                    }                     
+                });
  
                 
                 $("#supplierCategoriesList").click(function() {
@@ -260,9 +517,9 @@
                     }
                 });
                 $('#exportProducts').click(function() {
-                	$('#exportProducts').attr("disabled", "true");
-                	$('#exportProducts_status').text('Загрузка товаров');
-                	
+                    $('#exportProducts').attr("disabled", "true");
+                    $('#exportProducts_status').text('Загрузка товаров');
+                    
                     var checkedCategories = $('#supplierCategoriesList').find("ul:not(:has(ul)) :checked");
                     var supplier = $('#suppliersList').val();
                     
@@ -274,9 +531,9 @@
                             dataType: 'json',
                             success: function(response) {
                                 if(response.status == 0) {
-                                	$('#exportProducts').removeAttr("disabled");
-                                	$('#exportProducts_status').text('');
-									alert('Товары загружены');
+                                    $('#exportProducts').removeAttr("disabled");
+                                    $('#exportProducts_status').text('');
+                                    alert('Товары загружены');
                                 }
                             }
                         });
@@ -349,8 +606,8 @@
                     getSuppliersListButton.click();
                     
                     getSupplierProductsListButton.click(function() {
-                    	getSupplierProductsListButton.attr('disabled','disabled');
-                    	
+                        getSupplierProductsListButton.attr('disabled','disabled');
+                        
                         var $suppliers = $('#suppliersList');
                         var selectedValue = $suppliers.find(':selected').val();
 

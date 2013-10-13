@@ -63,6 +63,9 @@ class ModelClobucksSupplier extends Model
     }	
 
 	public function getDelivery() {
+        $this->_checkDeliveryTable();
+        $this->_checkDeliveryRelatedTable();        
+        
 		$result = $this->db->query("
 			SELECT * FROM " . DB_PREFIX . "clobucks_delivery
 		");

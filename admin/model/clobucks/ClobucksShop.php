@@ -80,7 +80,8 @@ class ModelClobucksClobucksShop extends Model
             return null;
         }
         $settings = $this->model_setting_setting->getSetting('ClobucksShopModel');
-        $arChecked = unserialize($settings['category']);
+        if(empty($settings['category'])) $arChecked = array();
+        else $arChecked = unserialize($settings['category']);
          
         $categories = [];
         // Why categories in $xml->categories->category ? (facepalm)
