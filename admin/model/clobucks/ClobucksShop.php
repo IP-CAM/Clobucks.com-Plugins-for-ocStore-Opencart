@@ -119,8 +119,8 @@ class ModelClobucksClobucksShop extends Model
                  
             $arProducts = simplexml_load_string($raw_products)->products;     
             if(is_object($arProducts) && count($arProducts)){                
-	            foreach ($arProducts as $raw_product) {
-	                $product = $raw_product->product;
+	            foreach ($arProducts->product as $raw_product) {
+	                $product = $raw_product;
 
 	                $options = [];
 	                if(count($product->options)) {

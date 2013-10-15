@@ -168,7 +168,8 @@ class ModelClobucksImportProduct extends Model
         SET 
 	        model = '" . $this->db->escape($product['title']) . "', 
 	        sku = '" . $this->db->escape($product['sku']) . "', 
-	        price = '" . (float)$product['price'] . "'
+	        price = '" . (float)$product['price'] . "',
+	        status = '1'
         WHERE 
         	product_id = '" . (int)$productId . "'");		
 

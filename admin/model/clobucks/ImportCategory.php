@@ -136,6 +136,7 @@ class ModelClobucksImportCategory extends Model {
     private function _issetCategories($arCategory, $parentId = 0) {
 		ksort($arCategory);
 		
+		if(!count($arCategory)) return;
 		foreach($arCategory as $parentCategoryId=>$categoryId) {
 			$category = $this->arCategory[$categoryId];
 			
